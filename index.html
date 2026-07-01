@@ -1,103 +1,222 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>FableHigh Hoops — Pro Basketball</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fable League Basketball — 3D</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='%23e8722a'/%3E%3C/svg%3E">
 <style>
-  html, body { margin: 0; padding: 0; overflow: hidden; background: #05060a; height: 100%; }
-  * { box-sizing: border-box; user-select: none; }
-  body { font-family: "Avenir Next", "Segoe UI", Helvetica, Arial, sans-serif; color: #fff; }
-  canvas { display: block; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: #fff; }
+  #game-canvas { display: block; width: 100%; height: 100%; }
 
-  #hud { position: fixed; inset: 0; pointer-events: none; display: none; }
-  #topbar {
+  #loading {
+    position: fixed; inset: 0; background: #05060f; z-index: 50;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; letter-spacing: 4px; color: #ffd23f;
+  }
+
+  /* ---------- HUD ---------- */
+  #hud { display: none; position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+  #scoreboard {
     position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
-    display: flex; gap: 18px; align-items: stretch;
-    background: linear-gradient(180deg, rgba(10,14,26,.92), rgba(6,8,16,.85));
-    border: 1px solid rgba(255,210,63,.35); border-radius: 12px;
-    padding: 8px 22px; box-shadow: 0 8px 30px rgba(0,0,0,.55);
+    display: flex; align-items: stretch; gap: 0;
+    background: linear-gradient(180deg, rgba(8,10,26,0.92), rgba(16,18,40,0.92));
+    border: 1px solid rgba(255,255,255,0.14); border-radius: 10px;
+    overflow: hidden; box-shadow: 0 6px 24px rgba(0,0,0,0.55);
   }
-  .stat { text-align: center; min-width: 84px; }
-  .stat .label { font-size: 10px; letter-spacing: 2px; color: #8fa3c8; }
-  .stat .value { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
-  #score .value { color: #ffd23f; }
-  #shotclock .value { color: #ff5a4e; }
-  #best .value { color: #7fd4ff; }
+  .team-cell { display: flex; align-items: center; gap: 10px; padding: 8px 16px; }
+  .badge { width: 14px; height: 34px; border-radius: 3px; }
+  .team-name { font-weight: 800; font-size: 15px; letter-spacing: 1px; }
+  .team-score { font-size: 30px; font-weight: 900; font-family: Consolas, monospace; min-width: 52px; text-align: center; }
+  .poss { width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; opacity: 0; transition: opacity .2s; }
+  #poss-home { border-right: 8px solid #ffd23f; }
+  #poss-away { border-left: 8px solid #ffd23f; }
+  #clock-cell {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 6px 18px; background: rgba(0,0,0,0.45); border-left: 1px solid rgba(255,255,255,0.12); border-right: 1px solid rgba(255,255,255,0.12);
+  }
+  #quarter { font-size: 12px; color: #ffd23f; font-weight: 700; letter-spacing: 2px; }
+  #game-clock { font-size: 24px; font-weight: 800; font-family: Consolas, monospace; }
+  #shot-clock { font-size: 15px; font-weight: 800; color: #ff8c1a; font-family: Consolas, monospace; }
+  #shot-clock.urgent { color: #ff2b2b; animation: pulse .5s infinite alternate; }
+  @keyframes pulse { from { opacity: 1; } to { opacity: 0.45; } }
 
-  #meterwrap {
-    position: absolute; bottom: 46px; left: 50%; transform: translateX(-50%);
-    width: 280px; height: 16px; border-radius: 8px;
-    background: rgba(8,10,18,.85); border: 1px solid rgba(255,255,255,.25);
-    overflow: hidden; opacity: 0; transition: opacity .12s;
-  }
-  #meterzone { position: absolute; top: 0; bottom: 0; background: rgba(80,220,120,.45); border-left: 1px solid #50dc78; border-right: 1px solid #50dc78; }
-  #meterfill { position: absolute; top: 0; bottom: 0; left: 0; width: 0%; background: linear-gradient(90deg, #ffd23f, #ff8a3c); }
-
-  #msg {
-    position: absolute; top: 26%; left: 50%; transform: translate(-50%,-50%);
-    font-size: 54px; font-weight: 900; letter-spacing: 3px; text-align: center;
-    text-shadow: 0 4px 24px rgba(0,0,0,.8); opacity: 0; white-space: nowrap;
-  }
-  #hint {
-    position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
-    font-size: 12px; color: #8fa3c8; letter-spacing: 1px;
+  #controlled-name {
+    position: absolute; bottom: 16px; left: 18px;
+    background: rgba(8,10,26,0.85); border: 1px solid rgba(255,255,255,0.12);
+    border-left: 4px solid #ffd23f;
+    padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: 700; letter-spacing: 1px;
   }
 
-  #menu {
-    position: fixed; inset: 0; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 14px;
-    background: radial-gradient(ellipse at 50% 35%, rgba(24,38,80,.88), rgba(4,5,10,.96) 70%);
-    z-index: 10;
+  #controls-hint {
+    position: absolute; bottom: 16px; right: 18px; text-align: right;
+    font-size: 11px; color: rgba(255,255,255,0.55); line-height: 1.7;
+    background: rgba(8,10,26,0.6); padding: 8px 12px; border-radius: 6px;
   }
-  #menu h1 { font-size: 64px; margin: 0; font-weight: 900; letter-spacing: 4px;
-    background: linear-gradient(180deg, #ffd23f, #ff8a3c); -webkit-background-clip: text; background-clip: text; color: transparent;
-    text-shadow: 0 10px 50px rgba(255,160,40,.25); }
-  #menu h2 { font-size: 16px; margin: 0 0 10px; font-weight: 600; letter-spacing: 6px; color: #8fa3c8; }
-  #finalscore { font-size: 30px; font-weight: 800; color: #ffd23f; display: none; }
-  #menu .controls {
-    background: rgba(8,10,18,.7); border: 1px solid rgba(255,255,255,.15); border-radius: 12px;
-    padding: 16px 26px; font-size: 14px; line-height: 1.9; color: #cdd8ee;
+  #controls-hint b { color: #ffd23f; font-weight: 700; }
+
+  /* shot meter */
+  #meter-wrap {
+    display: none; position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%);
+    width: 18px; height: 180px; background: rgba(0,0,0,0.65);
+    border: 2px solid rgba(255,255,255,0.4); border-radius: 9px; overflow: hidden;
   }
-  #menu .controls b { color: #ffd23f; display: inline-block; min-width: 130px; font-weight: 700; }
-  #press { font-size: 20px; font-weight: 800; letter-spacing: 3px; color: #fff; animation: pulse 1.2s infinite; margin-top: 8px; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+  #meter-zone {
+    position: absolute; left: 0; right: 0; bottom: 72%; height: 18%;
+    background: rgba(60, 255, 120, 0.35); border-top: 1px solid #3cff78; border-bottom: 1px solid #3cff78;
+  }
+  #meter-fill {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 0%;
+    background: linear-gradient(180deg, #ffd23f, #ff8c1a);
+    transition: none;
+  }
+  #meter-fill.hot { background: linear-gradient(180deg, #3cff78, #17c94f); }
+
+  /* center messages */
+  #message {
+    position: absolute; top: 24%; left: 50%; transform: translateX(-50%);
+    font-size: 44px; font-weight: 900; letter-spacing: 3px; font-style: italic;
+    color: #ffd23f; text-shadow: 0 4px 18px rgba(0,0,0,0.8), 0 0 40px rgba(255,210,63,0.35);
+    opacity: 0; white-space: nowrap;
+  }
+  #submessage {
+    position: absolute; top: calc(24% + 54px); left: 50%; transform: translateX(-50%);
+    font-size: 18px; font-weight: 700; letter-spacing: 2px; color: #fff; opacity: 0; white-space: nowrap;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+  }
+
+  /* ---------- overlays ---------- */
+  .overlay {
+    position: fixed; inset: 0; z-index: 20; display: none;
+    align-items: center; justify-content: center; flex-direction: column;
+    background: radial-gradient(ellipse at center, rgba(10,12,30,0.88) 0%, rgba(3,4,12,0.96) 100%);
+  }
+  .panel {
+    background: linear-gradient(180deg, #10142e, #0a0d20);
+    border: 1px solid rgba(255,255,255,0.15); border-radius: 16px;
+    padding: 38px 48px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+  }
+  h1 { font-size: 40px; font-weight: 900; font-style: italic; letter-spacing: 2px;
+       background: linear-gradient(90deg, #ffd23f, #ff8c1a); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .subtitle { margin-top: 6px; font-size: 13px; letter-spacing: 5px; color: #8890c0; }
+  .matchup { margin: 22px 0 8px; font-size: 17px; font-weight: 800; letter-spacing: 1px; }
+  .matchup .la { color: #b18cff; } .matchup .bos { color: #4ade80; }
+  .opt-group { margin-top: 18px; font-size: 13px; color: #aab; }
+  .opt-group .label { letter-spacing: 2px; font-size: 11px; color: #667; margin-bottom: 8px; }
+  .opt-group label {
+    display: inline-block; padding: 7px 16px; margin: 0 4px; cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.18); border-radius: 20px; user-select: none;
+  }
+  .opt-group input { display: none; }
+  .opt-group input:checked + span { color: #ffd23f; font-weight: 800; }
+  .opt-group label:has(input:checked) { border-color: #ffd23f; background: rgba(255,210,63,0.08); }
+  button.big {
+    margin-top: 28px; padding: 14px 60px; font-size: 18px; font-weight: 900; letter-spacing: 3px;
+    color: #0a0d20; background: linear-gradient(90deg, #ffd23f, #ff8c1a);
+    border: none; border-radius: 30px; cursor: pointer; transition: transform .1s, box-shadow .1s;
+  }
+  button.big:hover { transform: scale(1.05); box-shadow: 0 8px 30px rgba(255,180,60,0.4); }
+  .controls-table { margin-top: 24px; font-size: 12.5px; color: #99a; text-align: left; line-height: 2; column-count: 2; column-gap: 40px; }
+  .controls-table b { color: #ffd23f; display: inline-block; min-width: 64px; font-weight: 700; }
+  #final-line { font-size: 30px; font-weight: 900; color: #ffd23f; letter-spacing: 2px; }
+  #final-score { margin-top: 12px; font-size: 22px; font-family: Consolas, monospace; font-weight: 700; }
+  .paused-title { font-size: 34px; font-weight: 900; letter-spacing: 6px; color: #ffd23f; }
 </style>
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-  }
-}
-</script>
 </head>
 <body>
+  <div id="loading">LOADING…</div>
+  <canvas id="game-canvas"></canvas>
+
   <div id="hud">
-    <div id="topbar">
-      <div class="stat" id="score"><div class="label">POINTS</div><div class="value">0</div></div>
-      <div class="stat" id="clock"><div class="label">TIME</div><div class="value">2:00</div></div>
-      <div class="stat" id="shotclock"><div class="label">SHOT</div><div class="value">24</div></div>
-      <div class="stat" id="best"><div class="label">BEST</div><div class="value">0</div></div>
+    <div id="scoreboard">
+      <div class="team-cell">
+        <div id="home-badge" class="badge"></div>
+        <div class="team-name" id="home-name">LAG</div>
+        <div class="team-score" id="home-score">0</div>
+        <div class="poss" id="poss-home"></div>
+      </div>
+      <div id="clock-cell">
+        <div id="quarter">Q1</div>
+        <div id="game-clock">3:00</div>
+        <div id="shot-clock">24</div>
+      </div>
+      <div class="team-cell">
+        <div class="poss" id="poss-away"></div>
+        <div class="team-score" id="away-score">0</div>
+        <div class="team-name" id="away-name">BOS</div>
+        <div id="away-badge" class="badge"></div>
+      </div>
     </div>
-    <div id="meterwrap"><div id="meterzone"></div><div id="meterfill"></div></div>
-    <div id="msg"></div>
-    <div id="hint">WASD move &nbsp;·&nbsp; SHIFT sprint &nbsp;·&nbsp; hold SPACE to shoot, release in the green zone</div>
+
+    <div id="controlled-name"></div>
+    <div id="controls-hint">
+      <b>WASD</b> move &nbsp; <b>SHIFT</b> sprint &nbsp; <b>SPACE</b> shoot / jump<br>
+      <b>E</b> pass &nbsp; <b>Q</b> steal &nbsp; <b>TAB</b> switch &nbsp; <b>C</b> camera &nbsp; <b>P</b> pause
+    </div>
+
+    <div id="meter-wrap">
+      <div id="meter-zone"></div>
+      <div id="meter-fill"></div>
+    </div>
+
+    <div id="message"></div>
+    <div id="submessage"></div>
   </div>
 
-  <div id="menu">
-    <h1>FABLEHIGH HOOPS</h1>
-    <h2>PRO BASKETBALL</h2>
-    <div id="finalscore"></div>
-    <div class="controls">
-      <div><b>W A S D</b> Move</div>
-      <div><b>SHIFT</b> Sprint</div>
-      <div><b>SPACE (hold)</b> Charge shot — release in the green zone</div>
-      <div><b>Goal</b> Score as many points as you can in 2:00. Beat the defender!</div>
+  <div id="menu" class="overlay">
+    <div class="panel">
+      <h1>FABLE LEAGUE BASKETBALL</h1>
+      <div class="subtitle">3D &nbsp;•&nbsp; FULL COURT &nbsp;•&nbsp; 5 ON 5</div>
+      <div class="matchup"><span class="la">LOS ANGELES GOLD</span> &nbsp;vs&nbsp; <span class="bos">BOSTON CLOVERS</span></div>
+
+      <div class="opt-group">
+        <div class="label">QUARTER LENGTH</div>
+        <label><input type="radio" name="qlen" value="1"><span>1 MIN</span></label>
+        <label><input type="radio" name="qlen" value="3" checked><span>3 MIN</span></label>
+        <label><input type="radio" name="qlen" value="5"><span>5 MIN</span></label>
+      </div>
+      <div class="opt-group">
+        <div class="label">DIFFICULTY</div>
+        <label><input type="radio" name="diff" value="Rookie"><span>ROOKIE</span></label>
+        <label><input type="radio" name="diff" value="Pro" checked><span>PRO</span></label>
+        <label><input type="radio" name="diff" value="All-Star"><span>ALL-STAR</span></label>
+      </div>
+
+      <button class="big" id="start-btn">TIP OFF</button>
+
+      <div class="controls-table">
+        <div><b>WASD</b> move</div>
+        <div><b>SHIFT</b> sprint</div>
+        <div><b>SPACE</b> hold &amp; release to shoot</div>
+        <div><b>SPACE</b> jump / contest (defense)</div>
+        <div><b>E</b> pass</div>
+        <div><b>Q</b> steal</div>
+        <div><b>TAB</b> switch defender</div>
+        <div><b>C</b> camera view</div>
+      </div>
     </div>
-    <div id="press">PRESS ENTER TO PLAY</div>
   </div>
 
-  <script type="module" src="./game.js"></script>
+  <div id="pause-overlay" class="overlay">
+    <div class="panel">
+      <div class="paused-title">PAUSED</div>
+      <div class="opt-group" style="margin-top:16px">press <b style="color:#ffd23f">P</b> to resume</div>
+    </div>
+  </div>
+
+  <div id="gameover" class="overlay">
+    <div class="panel">
+      <div id="final-line">FINAL</div>
+      <div id="final-score">0 — 0</div>
+      <button class="big" id="restart-btn">PLAY AGAIN</button>
+    </div>
+  </div>
+
+  <script type="importmap">
+    { "imports": { "three": "./lib/three.module.js" } }
+  </script>
+  <script type="module" src="./js/main.js"></script>
 </body>
 </html>
