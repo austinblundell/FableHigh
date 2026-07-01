@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>FableHigh Hoops — Pro Basketball</title>
+<style>
+  html, body { margin: 0; padding: 0; overflow: hidden; background: #05060a; height: 100%; }
+  * { box-sizing: border-box; user-select: none; }
+  body { font-family: "Avenir Next", "Segoe UI", Helvetica, Arial, sans-serif; color: #fff; }
+  canvas { display: block; }
+
+  #hud { position: fixed; inset: 0; pointer-events: none; display: none; }
+  #topbar {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 18px; align-items: stretch;
+    background: linear-gradient(180deg, rgba(10,14,26,.92), rgba(6,8,16,.85));
+    border: 1px solid rgba(255,210,63,.35); border-radius: 12px;
+    padding: 8px 22px; box-shadow: 0 8px 30px rgba(0,0,0,.55);
+  }
+  .stat { text-align: center; min-width: 84px; }
+  .stat .label { font-size: 10px; letter-spacing: 2px; color: #8fa3c8; }
+  .stat .value { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  #score .value { color: #ffd23f; }
+  #shotclock .value { color: #ff5a4e; }
+  #best .value { color: #7fd4ff; }
+
+  #meterwrap {
+    position: absolute; bottom: 46px; left: 50%; transform: translateX(-50%);
+    width: 280px; height: 16px; border-radius: 8px;
+    background: rgba(8,10,18,.85); border: 1px solid rgba(255,255,255,.25);
+    overflow: hidden; opacity: 0; transition: opacity .12s;
+  }
+  #meterzone { position: absolute; top: 0; bottom: 0; background: rgba(80,220,120,.45); border-left: 1px solid #50dc78; border-right: 1px solid #50dc78; }
+  #meterfill { position: absolute; top: 0; bottom: 0; left: 0; width: 0%; background: linear-gradient(90deg, #ffd23f, #ff8a3c); }
+
+  #msg {
+    position: absolute; top: 26%; left: 50%; transform: translate(-50%,-50%);
+    font-size: 54px; font-weight: 900; letter-spacing: 3px; text-align: center;
+    text-shadow: 0 4px 24px rgba(0,0,0,.8); opacity: 0; white-space: nowrap;
+  }
+  #hint {
+    position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+    font-size: 12px; color: #8fa3c8; letter-spacing: 1px;
+  }
+
+  #menu {
+    position: fixed; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px;
+    background: radial-gradient(ellipse at 50% 35%, rgba(24,38,80,.88), rgba(4,5,10,.96) 70%);
+    z-index: 10;
+  }
+  #menu h1 { font-size: 64px; margin: 0; font-weight: 900; letter-spacing: 4px;
+    background: linear-gradient(180deg, #ffd23f, #ff8a3c); -webkit-background-clip: text; background-clip: text; color: transparent;
+    text-shadow: 0 10px 50px rgba(255,160,40,.25); }
+  #menu h2 { font-size: 16px; margin: 0 0 10px; font-weight: 600; letter-spacing: 6px; color: #8fa3c8; }
+  #finalscore { font-size: 30px; font-weight: 800; color: #ffd23f; display: none; }
+  #menu .controls {
+    background: rgba(8,10,18,.7); border: 1px solid rgba(255,255,255,.15); border-radius: 12px;
+    padding: 16px 26px; font-size: 14px; line-height: 1.9; color: #cdd8ee;
+  }
+  #menu .controls b { color: #ffd23f; display: inline-block; min-width: 130px; font-weight: 700; }
+  #press { font-size: 20px; font-weight: 800; letter-spacing: 3px; color: #fff; animation: pulse 1.2s infinite; margin-top: 8px; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+  <div id="hud">
+    <div id="topbar">
+      <div class="stat" id="score"><div class="label">POINTS</div><div class="value">0</div></div>
+      <div class="stat" id="clock"><div class="label">TIME</div><div class="value">2:00</div></div>
+      <div class="stat" id="shotclock"><div class="label">SHOT</div><div class="value">24</div></div>
+      <div class="stat" id="best"><div class="label">BEST</div><div class="value">0</div></div>
+    </div>
+    <div id="meterwrap"><div id="meterzone"></div><div id="meterfill"></div></div>
+    <div id="msg"></div>
+    <div id="hint">WASD move &nbsp;·&nbsp; SHIFT sprint &nbsp;·&nbsp; hold SPACE to shoot, release in the green zone</div>
+  </div>
+
+  <div id="menu">
+    <h1>FABLEHIGH HOOPS</h1>
+    <h2>PRO BASKETBALL</h2>
+    <div id="finalscore"></div>
+    <div class="controls">
+      <div><b>W A S D</b> Move</div>
+      <div><b>SHIFT</b> Sprint</div>
+      <div><b>SPACE (hold)</b> Charge shot — release in the green zone</div>
+      <div><b>Goal</b> Score as many points as you can in 2:00. Beat the defender!</div>
+    </div>
+    <div id="press">PRESS ENTER TO PLAY</div>
+  </div>
+
+  <script type="module" src="./game.js"></script>
+</body>
+</html>
